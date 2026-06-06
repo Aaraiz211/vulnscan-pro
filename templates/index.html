@@ -1,0 +1,563 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>VulnScan Pro — Web Vulnerability Scanner</title>
+<link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500&family=IBM+Plex+Sans:wght@300;400;500;600&display=swap" rel="stylesheet">
+<style>
+  :root {
+    --bg-base:#0a0e1a;--bg-panel:#0f1525;--bg-card:#141c2e;--bg-hover:#1a2540;
+    --accent-blue:#0f62fe;--accent-cyan:#33b1ff;--accent-teal:#08bdba;
+    --accent-green:#24a148;--accent-yellow:#f1c21b;--accent-red:#da1e28;--accent-orange:#ff832b;
+    --text-primary:#f4f4f4;--text-secondary:#a8b2c8;--text-muted:#4d5a70;
+    --border:#1e2d47;--border-bright:#2a3f60;
+    --font-main:'IBM Plex Sans',sans-serif;--font-mono:'IBM Plex Mono',monospace;
+  }
+  *{margin:0;padding:0;box-sizing:border-box}
+  body{background:var(--bg-base);color:var(--text-primary);font-family:var(--font-main);min-height:100vh;overflow-x:hidden}
+
+  /* NAV */
+  .topnav{background:#060a14;border-bottom:1px solid var(--border);height:48px;display:flex;align-items:center;padding:0 16px;gap:20px;position:fixed;top:0;left:0;right:0;z-index:100}
+  .brand{display:flex;align-items:center;gap:10px;font-size:13px;font-weight:600;letter-spacing:.08em}
+  .brand-icon{width:28px;height:28px;background:var(--accent-blue);border-radius:4px;display:flex;align-items:center;justify-content:center}
+  .brand-icon svg{width:16px;height:16px;fill:white}
+  .nav-sub{color:var(--text-secondary);font-size:12px;font-weight:300;letter-spacing:.04em}
+  .nav-divider{color:var(--text-muted)}
+  .nav-right{margin-left:auto;display:flex;align-items:center;gap:14px}
+  .status-dot{width:8px;height:8px;border-radius:50%;background:var(--accent-teal);box-shadow:0 0 6px var(--accent-teal);animation:pulse 2s infinite}
+  @keyframes pulse{0%,100%{opacity:1}50%{opacity:.4}}
+  .nav-user{font-size:11px;color:var(--text-secondary);font-family:var(--font-mono)}
+
+  /* SIDEBAR */
+  .layout{display:flex;margin-top:48px;min-height:calc(100vh - 48px)}
+  .sidebar{width:196px;background:#060a14;border-right:1px solid var(--border);padding:16px 0;flex-shrink:0;position:fixed;top:48px;left:0;bottom:0;overflow-y:auto}
+  .sl{font-size:10px;font-weight:600;letter-spacing:.12em;color:var(--text-muted);padding:10px 16px 4px;text-transform:uppercase}
+  .si{display:flex;align-items:center;gap:10px;padding:8px 16px;font-size:13px;color:var(--text-secondary);cursor:pointer;transition:all .15s;border-left:2px solid transparent}
+  .si:hover{background:var(--bg-hover);color:var(--text-primary)}
+  .si.active{background:rgba(15,98,254,.12);color:var(--accent-cyan);border-left-color:var(--accent-blue)}
+  .si svg{width:14px;height:14px;fill:currentColor;flex-shrink:0}
+
+  /* MAIN */
+  .main{margin-left:196px;flex:1;padding:24px}
+  .page-header{display:flex;align-items:flex-start;justify-content:space-between;margin-bottom:20px}
+  .page-title{font-size:20px;font-weight:600}
+  .page-sub{font-size:12px;color:var(--text-secondary);margin-top:3px;font-family:var(--font-mono)}
+
+  /* BUTTONS */
+  .btn{padding:8px 16px;border-radius:2px;font-size:13px;font-family:var(--font-main);cursor:pointer;border:none;font-weight:500;transition:all .15s}
+  .btn-primary{background:var(--accent-blue);color:#fff}
+  .btn-primary:hover{background:#0353e9}
+  .btn-primary:disabled{opacity:.4;cursor:not-allowed}
+  .btn-ghost{background:transparent;color:var(--text-secondary);border:1px solid var(--border-bright)}
+  .btn-ghost:hover{background:var(--bg-hover);color:var(--text-primary)}
+
+  /* AUTH BANNER */
+  .auth-banner{background:rgba(241,194,27,.08);border:1px solid rgba(241,194,27,.3);border-left:3px solid var(--accent-yellow);border-radius:2px;padding:12px 16px;margin-bottom:18px;display:flex;align-items:flex-start;gap:12px}
+  .auth-banner svg{width:16px;height:16px;fill:var(--accent-yellow);flex-shrink:0;margin-top:1px}
+  .auth-banner-text{font-size:12px;color:#f1c21b;line-height:1.5}
+  .auth-banner-text strong{display:block;font-weight:600;margin-bottom:2px}
+
+  /* STATS */
+  .stats-row{display:grid;grid-template-columns:repeat(5,1fr);gap:1px;background:var(--border);border:1px solid var(--border);border-radius:2px;margin-bottom:18px;overflow:hidden}
+  .stat-card{background:var(--bg-card);padding:14px 16px}
+  .stat-label{font-size:10px;font-weight:600;letter-spacing:.1em;text-transform:uppercase;color:var(--text-muted);margin-bottom:6px}
+  .stat-value{font-size:24px;font-weight:300;font-family:var(--font-mono)}
+  .sv-cyan{color:var(--accent-cyan)}.sv-red{color:var(--accent-red)}.sv-orange{color:var(--accent-orange)}.sv-yellow{color:var(--accent-yellow)}.sv-green{color:var(--accent-green)}
+
+  /* GRID */
+  .grid-main{display:grid;grid-template-columns:1fr 380px;gap:16px;margin-bottom:16px}
+
+  /* PANEL */
+  .panel{background:var(--bg-panel);border:1px solid var(--border);border-radius:2px}
+  .ph{padding:10px 16px;border-bottom:1px solid var(--border);display:flex;align-items:center;justify-content:space-between}
+  .pt{font-size:12px;font-weight:600;letter-spacing:.06em;color:var(--text-secondary);text-transform:uppercase}
+  .pb{padding:16px}
+
+  /* FORM */
+  .fg{margin-bottom:14px}
+  .fl{font-size:11px;font-weight:600;letter-spacing:.08em;text-transform:uppercase;color:var(--text-muted);margin-bottom:5px;display:block}
+  .fi{width:100%;background:var(--bg-base);border:1px solid var(--border);border-radius:2px;padding:8px 12px;font-size:13px;font-family:var(--font-mono);color:var(--text-primary);outline:none;transition:border-color .15s}
+  .fi:focus{border-color:var(--accent-blue)}
+  .fi::placeholder{color:var(--text-muted)}
+
+  /* MODULES */
+  .modules-grid{display:grid;grid-template-columns:1fr 1fr;gap:6px}
+  .mod{display:flex;align-items:center;gap:8px;padding:8px 10px;background:var(--bg-base);border:1px solid var(--border);border-radius:2px;cursor:pointer;transition:all .15s;user-select:none}
+  .mod:hover{border-color:var(--border-bright);background:var(--bg-hover)}
+  .mod.checked{border-color:rgba(15,98,254,.5);background:rgba(15,98,254,.08)}
+  .mod input{accent-color:var(--accent-blue);width:13px;height:13px;cursor:pointer;flex-shrink:0}
+  .mod-name{font-size:12px;color:var(--text-secondary);flex:1}
+  .mod-tag{font-size:9px;font-weight:600;letter-spacing:.08em;padding:2px 5px;border-radius:2px;text-transform:uppercase}
+  .tag-net{background:rgba(8,189,186,.15);color:var(--accent-teal)}
+  .tag-sast{background:rgba(51,177,255,.15);color:var(--accent-cyan)}
+  .tag-dast{background:rgba(255,131,43,.15);color:var(--accent-orange)}
+
+  /* SCAN ACTIONS */
+  .scan-actions{display:flex;gap:8px;margin-top:14px}
+
+  /* PROGRESS */
+  .prog-section{display:none;margin-top:14px}
+  .prog-section.active{display:block}
+  .prog-label{font-size:11px;color:var(--text-muted);margin-bottom:4px;display:flex;justify-content:space-between}
+  .prog-wrap{background:var(--bg-base);border-radius:2px;height:4px;overflow:hidden}
+  .prog-bar{height:100%;background:linear-gradient(90deg,var(--accent-blue),var(--accent-cyan));border-radius:2px;width:0%;transition:width .4s ease}
+
+  /* SEVERITY CHART */
+  .chart-row{display:flex;align-items:center;gap:8px;margin-bottom:8px}
+  .chart-lbl{font-size:11px;color:var(--text-secondary);width:60px;flex-shrink:0}
+  .chart-bw{flex:1;background:var(--bg-base);border-radius:2px;height:10px;overflow:hidden}
+  .chart-bf{height:100%;border-radius:2px;transition:width 1s ease;width:0%}
+  .chart-cnt{font-size:11px;font-family:var(--font-mono);color:var(--text-muted);width:18px;text-align:right}
+
+  /* TERMINAL */
+  .terminal{background:#030508;border:1px solid var(--border);border-radius:2px;padding:10px 12px;font-family:var(--font-mono);font-size:11px;line-height:1.7;height:220px;overflow-y:auto;color:var(--text-secondary);margin-top:14px}
+  .terminal::-webkit-scrollbar{width:4px}
+  .terminal::-webkit-scrollbar-thumb{background:var(--border-bright)}
+  .li{color:var(--accent-cyan)}.lo{color:var(--accent-green)}.lw{color:var(--accent-yellow)}.le{color:var(--accent-red)}.ld{color:var(--text-muted)}
+
+  /* FINDINGS */
+  .findings-table{width:100%;border-collapse:collapse;font-size:12px}
+  .findings-table th{text-align:left;padding:8px 12px;font-size:10px;font-weight:600;letter-spacing:.1em;text-transform:uppercase;color:var(--text-muted);border-bottom:1px solid var(--border);background:var(--bg-base)}
+  .findings-table td{padding:9px 12px;border-bottom:1px solid var(--border);color:var(--text-secondary);vertical-align:top}
+  .findings-table tr:hover td{background:var(--bg-hover);color:var(--text-primary)}
+  .findings-table tr:last-child td{border-bottom:none}
+  .sev-badge{display:inline-block;padding:2px 7px;border-radius:2px;font-size:10px;font-weight:600;letter-spacing:.06em;text-transform:uppercase;font-family:var(--font-mono)}
+  .sev-critical{background:rgba(218,30,40,.2);color:#ff8389;border:1px solid rgba(218,30,40,.4)}
+  .sev-high{background:rgba(255,131,43,.2);color:var(--accent-orange);border:1px solid rgba(255,131,43,.4)}
+  .sev-medium{background:rgba(241,194,27,.2);color:var(--accent-yellow);border:1px solid rgba(241,194,27,.4)}
+  .sev-low{background:rgba(36,161,72,.2);color:#42be65;border:1px solid rgba(36,161,72,.4)}
+  .sev-info{background:rgba(51,177,255,.15);color:var(--accent-cyan);border:1px solid rgba(51,177,255,.3)}
+  .empty-state{text-align:center;padding:48px;color:var(--text-muted)}
+  .empty-state svg{width:32px;height:32px;fill:var(--text-muted);margin-bottom:10px;opacity:.4}
+  .empty-state p{font-size:12px}
+  .report-actions{display:flex;gap:8px;padding:12px 16px;border-top:1px solid var(--border);background:var(--bg-base)}
+
+  /* MODAL */
+  .modal-overlay{display:none;position:fixed;inset:0;background:rgba(0,0,0,.8);z-index:200;align-items:center;justify-content:center}
+  .modal-overlay.active{display:flex}
+  .modal{background:var(--bg-panel);border:1px solid var(--border-bright);border-top:2px solid var(--accent-blue);width:500px;border-radius:2px;padding:28px}
+  .modal-title{font-size:16px;font-weight:600;margin-bottom:12px}
+  .modal-body{font-size:13px;color:var(--text-secondary);line-height:1.7;margin-bottom:20px}
+  .modal-body ul{padding-left:18px;margin-top:8px}
+  .modal-body li{margin-bottom:5px}
+  .modal-footer{display:flex;gap:8px;justify-content:flex-end}
+
+  .footer-strip{margin-top:24px;padding:10px 0;border-top:1px solid var(--border);display:flex;justify-content:space-between;font-size:10px;color:var(--text-muted);font-family:var(--font-mono)}
+  ::-webkit-scrollbar{width:6px}::-webkit-scrollbar-track{background:var(--bg-base)}::-webkit-scrollbar-thumb{background:var(--border-bright);border-radius:3px}
+
+  .error-banner{background:rgba(218,30,40,.08);border:1px solid rgba(218,30,40,.3);border-left:3px solid var(--accent-red);border-radius:2px;padding:10px 14px;margin-top:12px;font-size:12px;color:#ff8389;display:none}
+  .error-banner.active{display:block}
+</style>
+</head>
+<body>
+
+<!-- AUTH MODAL -->
+<div class="modal-overlay active" id="authModal">
+  <div class="modal">
+    <div class="modal-title">⚠ Authorization Required</div>
+    <div class="modal-body">
+      <strong>VulnScan Pro is a professional penetration testing tool.</strong>
+      Before using this tool, you must confirm:
+      <ul>
+        <li>You have written authorization to scan the target system.</li>
+        <li>You are the owner of the target, or have explicit written permission.</li>
+        <li>Unauthorized scanning may be illegal under your local laws (CFAA, Computer Misuse Act, etc).</li>
+        <li>You accept full responsibility for how you use this tool.</li>
+      </ul>
+    </div>
+    <div style="margin-bottom:18px">
+      <label style="display:flex;align-items:center;gap:9px;font-size:13px;color:#f1c21b;cursor:pointer">
+        <input type="checkbox" id="modalCheck" style="accent-color:#f1c21b;width:14px;height:14px">
+        I confirm I have written authorization to scan the target.
+      </label>
+    </div>
+    <div class="modal-footer">
+      <button class="btn btn-ghost" onclick="window.close()">Exit</button>
+      <button class="btn btn-primary" id="modalAccept" disabled onclick="acceptAuth()">Accept &amp; Continue</button>
+    </div>
+  </div>
+</div>
+
+<!-- NAV -->
+<nav class="topnav">
+  <div class="brand">
+    <div class="brand-icon">
+      <svg viewBox="0 0 16 16"><path d="M8 1a7 7 0 1 0 0 14A7 7 0 0 0 8 1zm0 1.5a5.5 5.5 0 1 1 0 11 5.5 5.5 0 0 1 0-11zm-.5 2v4.25l3 1.5-.5.87L7 9.5V4.5h.5z"/></svg>
+    </div>
+    VULNSCAN PRO
+  </div>
+  <span class="nav-divider">|</span>
+  <span class="nav-sub">Security Intelligence Platform</span>
+  <div class="nav-right">
+    <div class="status-dot" id="statusDot"></div>
+    <span class="nav-user" id="serverStatus">connecting...</span>
+  </div>
+</nav>
+
+<div class="layout">
+  <!-- SIDEBAR -->
+  <aside class="sidebar">
+    <div class="sl">Navigation</div>
+    <div class="si active">
+      <svg viewBox="0 0 16 16"><path d="M1 2.5A1.5 1.5 0 0 1 2.5 1h3A1.5 1.5 0 0 1 7 2.5v3A1.5 1.5 0 0 1 5.5 7h-3A1.5 1.5 0 0 1 1 5.5v-3zm8 0A1.5 1.5 0 0 1 10.5 1h3A1.5 1.5 0 0 1 15 2.5v3A1.5 1.5 0 0 1 13.5 7h-3A1.5 1.5 0 0 1 9 5.5v-3zm-8 8A1.5 1.5 0 0 1 2.5 9h3A1.5 1.5 0 0 1 7 10.5v3A1.5 1.5 0 0 1 5.5 15h-3A1.5 1.5 0 0 1 1 13.5v-3zm8 0A1.5 1.5 0 0 1 10.5 9h3a1.5 1.5 0 0 1 1.5 1.5v3a1.5 1.5 0 0 1-1.5 1.5h-3A1.5 1.5 0 0 1 9 13.5v-3z"/></svg>
+      Dashboard
+    </div>
+    <div class="sl" style="margin-top:8px">Modules</div>
+    <div class="si">
+      <svg viewBox="0 0 16 16"><path d="M0 4.5A.5.5 0 0 1 .5 4h15a.5.5 0 0 1 0 1H.5a.5.5 0 0 1-.5-.5zm0 4A.5.5 0 0 1 .5 8h15a.5.5 0 0 1 0 1H.5a.5.5 0 0 1-.5-.5zm0 4A.5.5 0 0 1 .5 12h15a.5.5 0 0 1 0 1H.5a.5.5 0 0 1-.5-.5z"/></svg>
+      Port Scanner
+    </div>
+    <div class="si">
+      <svg viewBox="0 0 16 16"><path d="M14 10.5a.5.5 0 0 0-.5-.5h-3a.5.5 0 0 0 0 1h3a.5.5 0 0 0 .5-.5zm0-3a.5.5 0 0 0-.5-.5h-7a.5.5 0 0 0 0 1h7a.5.5 0 0 0 .5-.5zm0-3a.5.5 0 0 0-.5-.5h-11a.5.5 0 0 0 0 1h11a.5.5 0 0 0 .5-.5z"/></svg>
+      Header Analyzer
+    </div>
+    <div class="si">
+      <svg viewBox="0 0 16 16"><path d="M8 1a7 7 0 1 0 0 14A7 7 0 0 0 8 1zm0 1.5a5.5 5.5 0 1 1 0 11 5.5 5.5 0 0 1 0-11zm-.5 2.5h1v5h-1V5zm.5 7a.75.75 0 1 1 0-1.5.75.75 0 0 1 0 1.5z"/></svg>
+      SSL Checker
+    </div>
+    <div class="si">
+      <svg viewBox="0 0 16 16"><path d="M9.5 1H3.5A1.5 1.5 0 0 0 2 2.5v11A1.5 1.5 0 0 0 3.5 15h9A1.5 1.5 0 0 0 14 13.5V5.5L9.5 1zM9 2l4 4H9V2zM3.5 2h5v4.5a.5.5 0 0 0 .5.5h4v6.5a.5.5 0 0 1-.5.5h-9a.5.5 0 0 1-.5-.5v-11a.5.5 0 0 1 .5-.5z"/></svg>
+      Dir Enumeration
+    </div>
+    <div class="si">
+      <svg viewBox="0 0 16 16"><path d="M8 1a7 7 0 1 0 0 14A7 7 0 0 0 8 1zm1 10.5H7v-1.5h2v1.5zm0-3H7V4.5h2V8.5z"/></svg>
+      Injection Points
+    </div>
+    <div class="sl" style="margin-top:8px">Reports</div>
+    <div class="si" onclick="exportHTML()">
+      <svg viewBox="0 0 16 16"><path d="M.5 9.9a.5.5 0 0 1 .5.5v2.5a1 1 0 0 0 1 1h12a1 1 0 0 0 1-1v-2.5a.5.5 0 0 1 1 0v2.5a2 2 0 0 1-2 2H2a2 2 0 0 1-2-2v-2.5a.5.5 0 0 1 .5-.5z"/><path d="M7.646 11.854a.5.5 0 0 0 .708 0l3-3a.5.5 0 0 0-.708-.708L8.5 10.293V1.5a.5.5 0 0 0-1 0v8.793L5.354 8.146a.5.5 0 1 0-.708.708l3 3z"/></svg>
+      Export HTML
+    </div>
+    <div class="si" onclick="exportJSON()">
+      <svg viewBox="0 0 16 16"><path d="M.5 9.9a.5.5 0 0 1 .5.5v2.5a1 1 0 0 0 1 1h12a1 1 0 0 0 1-1v-2.5a.5.5 0 0 1 1 0v2.5a2 2 0 0 1-2 2H2a2 2 0 0 1-2-2v-2.5a.5.5 0 0 1 .5-.5z"/><path d="M7.646 11.854a.5.5 0 0 0 .708 0l3-3a.5.5 0 0 0-.708-.708L8.5 10.293V1.5a.5.5 0 0 0-1 0v8.793L5.354 8.146a.5.5 0 1 0-.708.708l3 3z"/></svg>
+      Export JSON
+    </div>
+  </aside>
+
+  <!-- MAIN -->
+  <main class="main">
+    <div class="page-header">
+      <div>
+        <div class="page-title">Vulnerability Scanner</div>
+        <div class="page-sub">v1.0.0 | OWASP Top 10 | CEH-aligned | Real-time scanning</div>
+      </div>
+    </div>
+
+    <!-- AUTH BANNER -->
+    <div class="auth-banner">
+      <svg viewBox="0 0 16 16"><path d="M8 1a7 7 0 1 0 0 14A7 7 0 0 0 8 1zm.5 3v4.5h-1V4h1zm-.5 7a.75.75 0 1 1 0-1.5.75.75 0 0 1 0 1.5z"/></svg>
+      <div class="auth-banner-text">
+        <strong>Authorized Use Only</strong>
+        This tool performs real network scans. Only scan systems you own or have written permission to test.
+      </div>
+    </div>
+
+    <!-- STATS -->
+    <div class="stats-row">
+      <div class="stat-card"><div class="stat-label">Total Scans</div><div class="stat-value sv-cyan" id="stScans">0</div></div>
+      <div class="stat-card"><div class="stat-label">Critical</div><div class="stat-value sv-red" id="stCrit">0</div></div>
+      <div class="stat-card"><div class="stat-label">High</div><div class="stat-value sv-orange" id="stHigh">0</div></div>
+      <div class="stat-card"><div class="stat-label">Medium</div><div class="stat-value sv-yellow" id="stMed">0</div></div>
+      <div class="stat-card"><div class="stat-label">Low / Info</div><div class="stat-value sv-green" id="stLow">0</div></div>
+    </div>
+
+    <!-- SCAN CONFIG + RIGHT PANEL -->
+    <div class="grid-main">
+      <!-- SCAN CONFIG -->
+      <div class="panel">
+        <div class="ph"><span class="pt">Scan Configuration</span><span style="font-size:10px;color:var(--text-muted);font-family:var(--font-mono)">LIVE MODE</span></div>
+        <div class="pb">
+          <div class="fg">
+            <label class="fl">Target URL or IP Address</label>
+            <input class="fi" type="text" id="targetInput" placeholder="https://example.com  or  192.168.1.1">
+          </div>
+          <div class="fg">
+            <label class="fl">Scan Modules</label>
+            <div class="modules-grid">
+              <label class="mod checked" id="mod-port"><input type="checkbox" value="port" checked> <span class="mod-name">Port Scan</span><span class="mod-tag tag-net">NET</span></label>
+              <label class="mod checked" id="mod-header"><input type="checkbox" value="header" checked> <span class="mod-name">HTTP Headers</span><span class="mod-tag tag-sast">SAST</span></label>
+              <label class="mod checked" id="mod-ssl"><input type="checkbox" value="ssl" checked> <span class="mod-name">SSL / TLS</span><span class="mod-tag tag-net">NET</span></label>
+              <label class="mod checked" id="mod-dir"><input type="checkbox" value="dir" checked> <span class="mod-name">Dir Enum</span><span class="mod-tag tag-dast">DAST</span></label>
+              <label class="mod checked" id="mod-injection"><input type="checkbox" value="injection" checked> <span class="mod-name">Injection Points</span><span class="mod-tag tag-dast">DAST</span></label>
+            </div>
+          </div>
+          <div class="scan-actions">
+            <button class="btn btn-primary" id="startBtn" onclick="startScan()" style="flex:1">▶ Start Scan</button>
+            <button class="btn btn-ghost" onclick="clearAll()">Clear</button>
+          </div>
+          <div class="error-banner" id="errBanner"></div>
+          <div class="prog-section" id="progSection">
+            <div class="prog-label"><span id="progStatus">Initializing...</span><span id="progPct">0%</span></div>
+            <div class="prog-wrap"><div class="prog-bar" id="progBar"></div></div>
+          </div>
+        </div>
+      </div>
+
+      <!-- RIGHT: CHART + LOG -->
+      <div style="display:flex;flex-direction:column;gap:16px">
+        <div class="panel">
+          <div class="ph"><span class="pt">Severity Breakdown</span></div>
+          <div class="pb">
+            <div class="chart-row"><span class="chart-lbl">Critical</span><div class="chart-bw"><div class="chart-bf" id="bc-critical" style="background:var(--accent-red)"></div></div><span class="chart-cnt" id="cc-critical">0</span></div>
+            <div class="chart-row"><span class="chart-lbl">High</span><div class="chart-bw"><div class="chart-bf" id="bc-high" style="background:var(--accent-orange)"></div></div><span class="chart-cnt" id="cc-high">0</span></div>
+            <div class="chart-row"><span class="chart-lbl">Medium</span><div class="chart-bw"><div class="chart-bf" id="bc-medium" style="background:var(--accent-yellow)"></div></div><span class="chart-cnt" id="cc-medium">0</span></div>
+            <div class="chart-row"><span class="chart-lbl">Low</span><div class="chart-bw"><div class="chart-bf" id="bc-low" style="background:var(--accent-green)"></div></div><span class="chart-cnt" id="cc-low">0</span></div>
+            <div class="chart-row"><span class="chart-lbl">Info</span><div class="chart-bw"><div class="chart-bf" id="bc-info" style="background:var(--accent-cyan)"></div></div><span class="chart-cnt" id="cc-info">0</span></div>
+          </div>
+        </div>
+        <div class="panel" style="flex:1">
+          <div class="ph"><span class="pt">Scan Log</span></div>
+          <div style="padding:12px">
+            <div class="terminal" id="terminal">
+              <span class="ld">[VulnScan Pro v1.0.0 — Real-time scanner ready]</span><br>
+              <span class="ld">[Configure target and click Start Scan]</span><br>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- FINDINGS TABLE -->
+    <div class="panel">
+      <div class="ph">
+        <span class="pt">Findings</span>
+        <span id="findingsCount" style="font-size:11px;font-family:var(--font-mono);color:var(--text-muted)">0 issues found</span>
+      </div>
+      <div id="findingsBody">
+        <div class="empty-state" id="emptyState">
+          <svg viewBox="0 0 16 16"><path d="M11.742 10.344a6.5 6.5 0 1 0-1.397 1.398h-.001c.03.04.062.078.098.115l3.85 3.85a1 1 0 0 0 1.415-1.414l-3.85-3.85a1.007 1.007 0 0 0-.115-.099zM6.5 12a5.5 5.5 0 1 1 0-11 5.5 5.5 0 0 1 0 11z"/></svg>
+          <p>No findings yet. Run a scan to discover vulnerabilities.</p>
+        </div>
+        <div style="overflow-x:auto;display:none" id="tableWrap">
+          <table class="findings-table">
+            <thead><tr><th>#</th><th>Severity</th><th>Module</th><th>Finding</th><th>Description</th><th>Reference</th><th>Detail</th></tr></thead>
+            <tbody id="findingsTbody"></tbody>
+          </table>
+        </div>
+      </div>
+      <div class="report-actions" id="reportActions" style="display:none">
+        <button class="btn btn-ghost" onclick="exportHTML()">⬇ Export HTML Report</button>
+        <button class="btn btn-ghost" onclick="exportJSON()">⬇ Export JSON</button>
+      </div>
+    </div>
+
+    <div class="footer-strip">
+      <span>VulnScan Pro v1.0.0 | Aaraiz Tahir | BS Cybersecurity — Air University | CEH</span>
+      <span>Authorized penetration testing only</span>
+    </div>
+  </main>
+</div>
+
+<script>
+  const API = "http://127.0.0.1:5000";
+  let authorized = false;
+  let scanCount = 0;
+  let lastReportJson = null;
+  let lastReportHtml = null;
+
+  // Auth modal
+  document.getElementById("modalCheck").addEventListener("change", function() {
+    const btn = document.getElementById("modalAccept");
+    btn.disabled = !this.checked;
+  });
+  function acceptAuth() {
+    authorized = true;
+    document.getElementById("authModal").classList.remove("active");
+    log("ok","Authorization confirmed. Real-time scanning enabled.");
+  }
+
+  // Module checkbox styling
+  document.querySelectorAll(".mod input").forEach(cb => {
+    cb.addEventListener("change", () => {
+      cb.closest(".mod").classList.toggle("checked", cb.checked);
+    });
+  });
+
+  // Server health check
+  async function checkServer() {
+    try {
+      const r = await fetch(API + "/api/health");
+      const d = await r.json();
+      document.getElementById("serverStatus").textContent = "server: online";
+      document.getElementById("statusDot").style.background = "var(--accent-teal)";
+    } catch {
+      document.getElementById("serverStatus").textContent = "server: offline";
+      document.getElementById("statusDot").style.background = "var(--accent-red)";
+      document.getElementById("statusDot").style.boxShadow = "0 0 6px var(--accent-red)";
+    }
+  }
+  checkServer();
+  setInterval(checkServer, 10000);
+
+  // Log
+  function log(type, msg) {
+    const t = document.getElementById("terminal");
+    const ts = new Date().toTimeString().slice(0,8);
+    const cls = {info:"li",ok:"lo",warn:"lw",err:"le",dim:"ld"}[type] || "";
+    const pfx = {info:"[INFO]",ok:"[ OK ]",warn:"[WARN]",err:"[ERR ]",dim:"[SYS ]"}[type] || "";
+    t.innerHTML += `<span class="${cls}">${ts} ${pfx} ${msg}</span><br>`;
+    t.scrollTop = t.scrollHeight;
+  }
+
+  function setProgress(pct, label) {
+    document.getElementById("progBar").style.width = pct + "%";
+    document.getElementById("progPct").textContent = pct + "%";
+    if(label) document.getElementById("progStatus").textContent = label;
+  }
+
+  function showError(msg) {
+    const b = document.getElementById("errBanner");
+    b.textContent = "⚠ " + msg;
+    b.classList.add("active");
+  }
+  function hideError() { document.getElementById("errBanner").classList.remove("active"); }
+
+  async function startScan() {
+    if(!authorized) {
+      document.getElementById("authModal").classList.add("active");
+      return;
+    }
+    const target = document.getElementById("targetInput").value.trim();
+    if(!target) { showError("Please enter a target URL or IP address."); return; }
+    hideError();
+
+    const modules = [];
+    document.querySelectorAll(".mod input:checked").forEach(cb => modules.push(cb.value));
+    if(!modules.length) { showError("Select at least one scan module."); return; }
+
+    const btn = document.getElementById("startBtn");
+    btn.disabled = true;
+    btn.textContent = "⏳ Scanning...";
+    document.getElementById("progSection").classList.add("active");
+    clearFindings(true);
+    setProgress(5, "Connecting to scanner...");
+
+    log("info", `Starting real scan: ${target}`);
+    log("info", `Modules: ${modules.join(", ")}`);
+    log("dim", "Sending request to VulnScan backend...");
+
+    try {
+      setProgress(15, "Running scan modules...");
+      const resp = await fetch(API + "/api/scan", {
+        method: "POST",
+        headers: {"Content-Type":"application/json"},
+        body: JSON.stringify({target, modules, authorized: true})
+      });
+
+      if(!resp.ok) {
+        const err = await resp.json();
+        throw new Error(err.error || "Scan failed");
+      }
+
+      setProgress(80, "Processing results...");
+      const data = await resp.json();
+
+      // Replay logs from backend
+      (data.logs || []).forEach(l => log(l.type, l.msg));
+
+      setProgress(100, "Complete");
+      scanCount++;
+      document.getElementById("stScans").textContent = scanCount;
+
+      lastReportJson = data.report_json;
+      lastReportHtml = data.report_html;
+
+      renderFindings(data.findings || []);
+      updateChart(data.findings || []);
+      log("ok", `Scan complete. ${(data.findings||[]).length} findings.`);
+
+    } catch(e) {
+      log("err", `Scan error: ${e.message}`);
+      showError(e.message.includes("fetch") ? "Cannot connect to backend. Is app.py running?" : e.message);
+      setProgress(0,"Error");
+    }
+
+    btn.disabled = false;
+    btn.textContent = "▶ Start Scan";
+  }
+
+  const SEV_ORDER = {critical:0,high:1,medium:2,low:3,info:4};
+
+  function renderFindings(list) {
+    list = [...list].sort((a,b) => (SEV_ORDER[a.severity]||5)-(SEV_ORDER[b.severity]||5));
+    document.getElementById("emptyState").style.display = list.length ? "none" : "block";
+    document.getElementById("tableWrap").style.display = list.length ? "block" : "none";
+    document.getElementById("reportActions").style.display = list.length ? "flex" : "none";
+    document.getElementById("findingsCount").textContent = list.length + " issue" + (list.length!==1?"s":"") + " found";
+
+    const tbody = document.getElementById("findingsTbody");
+    tbody.innerHTML = "";
+    list.forEach((f,i) => {
+      const tr = document.createElement("tr");
+      tr.innerHTML = `
+        <td style="font-family:var(--font-mono);color:var(--text-muted)">${String(i+1).padStart(3,"0")}</td>
+        <td><span class="sev-badge sev-${f.severity}">${f.severity}</span></td>
+        <td style="font-family:var(--font-mono);font-size:11px;color:var(--accent-cyan)">${f.module}</td>
+        <td style="color:var(--text-primary);font-weight:500;min-width:180px">${f.name}</td>
+        <td style="max-width:260px;font-size:12px">${f.description}</td>
+        <td style="font-family:var(--font-mono);font-size:11px;color:var(--accent-teal)">${f.reference}</td>
+        <td style="font-size:11px;color:var(--text-muted);max-width:200px">${f.detail||""}</td>`;
+      tbody.appendChild(tr);
+    });
+
+    // Update stat counters
+    const counts = {critical:0,high:0,medium:0,low:0,info:0};
+    list.forEach(f => { counts[f.severity] = (counts[f.severity]||0)+1; });
+    document.getElementById("stCrit").textContent = counts.critical;
+    document.getElementById("stHigh").textContent = counts.high;
+    document.getElementById("stMed").textContent = counts.medium;
+    document.getElementById("stLow").textContent = counts.low + counts.info;
+  }
+
+  function updateChart(list) {
+    const counts = {critical:0,high:0,medium:0,low:0,info:0};
+    list.forEach(f => { counts[f.severity] = (counts[f.severity]||0)+1; });
+    const max = Math.max(...Object.values(counts), 1);
+    ["critical","high","medium","low","info"].forEach(k => {
+      document.getElementById("bc-"+k).style.width = (counts[k]/max*100)+"%";
+      document.getElementById("cc-"+k).textContent = counts[k];
+    });
+  }
+
+  function clearFindings(silent) {
+    lastReportJson = null; lastReportHtml = null;
+    document.getElementById("emptyState").style.display = "block";
+    document.getElementById("tableWrap").style.display = "none";
+    document.getElementById("reportActions").style.display = "none";
+    document.getElementById("findingsCount").textContent = "0 issues found";
+    document.getElementById("findingsTbody").innerHTML = "";
+    ["critical","high","medium","low","info"].forEach(k => {
+      document.getElementById("bc-"+k).style.width="0%";
+      document.getElementById("cc-"+k).textContent="0";
+    });
+    if(!silent) {
+      document.getElementById("terminal").innerHTML = '<span class="ld">[Cleared. Ready for new scan.]</span><br>';
+      setProgress(0,"");
+      document.getElementById("progSection").classList.remove("active");
+      document.getElementById("stCrit").textContent="0";
+      document.getElementById("stHigh").textContent="0";
+      document.getElementById("stMed").textContent="0";
+      document.getElementById("stLow").textContent="0";
+      hideError();
+    }
+  }
+  function clearAll() { clearFindings(false); }
+
+  function exportJSON() {
+    if(!lastReportJson) return;
+    const blob = new Blob([JSON.stringify(lastReportJson,null,2)],{type:"application/json"});
+    const a = document.createElement("a"); a.href=URL.createObjectURL(blob);
+    a.download="vulnscan_report_"+Date.now()+".json"; a.click();
+    log("ok","JSON report downloaded.");
+  }
+  function exportHTML() {
+    if(!lastReportHtml) return;
+    const blob = new Blob([lastReportHtml],{type:"text/html"});
+    const a = document.createElement("a"); a.href=URL.createObjectURL(blob);
+    a.download="vulnscan_report_"+Date.now()+".html"; a.click();
+    log("ok","HTML report downloaded.");
+  }
+</script>
+</body>
+</html>
