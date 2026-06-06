@@ -54,34 +54,7 @@ Unlike most open-source scanners that are either too narrow in scope or require 
 
 ---
 
-## Screenshots
 
-### Authorization Gate
-Every session begins with a mandatory authorization modal. Scanning is locked until the user explicitly confirms written permission.
-
-![Authorization Gate](docs/screenshots/auth_gate.png)
-
-### Main Dashboard
-IBM QRadar-inspired dark interface with module selector, severity chart, and live log terminal.
-
-![Dashboard](docs/screenshots/dashboard.png)
-
-### Scan in Progress
-Real-time progress bar and timestamped log output during active scanning.
-
-![Scan Progress](docs/screenshots/scan_progress.png)
-
-### Findings Table
-Color-coded severity findings with CWE references and remediation details.
-
-![Findings](docs/screenshots/findings.png)
-
-### Exported HTML Report
-Standalone dark-themed report ready to share as a pen test deliverable.
-
-![Report](docs/screenshots/html_report.png)
-
----
 
 ## Installation
 
